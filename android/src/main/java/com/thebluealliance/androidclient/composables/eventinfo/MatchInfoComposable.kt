@@ -2,8 +2,10 @@ package com.thebluealliance.androidclient.composables.eventinfo
 
 import android.text.format.DateFormat
 import androidx.annotation.ColorRes
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
@@ -24,6 +26,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -32,6 +35,7 @@ import androidx.compose.ui.unit.sp
 import com.thebluealliance.androidclient.R
 import com.thebluealliance.androidclient.models.Match
 import com.thebluealliance.androidclient.types.AllianceColor
+import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
@@ -115,7 +119,8 @@ fun MatchInfoComposable(match: Match) {
                         if (showScores) {
                             ScoreText(
                                 match.alliances!!.red.score.toString(),
-                                R.color.match_view_red_score
+                                R.color.match_view_red_score,
+                                0 // TODO after clean up of models
                             )
                         }
                     }
@@ -135,7 +140,8 @@ fun MatchInfoComposable(match: Match) {
                         if (showScores) {
                             ScoreText(
                                 match.alliances!!.blue.score.toString(),
-                                R.color.match_view_blue_score
+                                R.color.match_view_blue_score,
+                                1 // TODO after clean up of models
                             )
                         }
                     }
@@ -147,9 +153,9 @@ fun MatchInfoComposable(match: Match) {
                             localTimeString = stringResource(R.string.no_time_available)
                         } else {
                             val date = Date(match.time!! * 1000L)
-                            val format = DateFormat.getBestDateTimePattern(
-                                Locale.getDefault(),
-                                matchTimeFormatSkeleton
+                            val format = SimpleDateFormat(
+                                matchTimeFormatSkeleton,
+                                Locale.getDefault()
                             )
                             localTimeString = format.format(date)
                         }
@@ -186,13 +192,22 @@ fun RowScope.HeaderText(text: String, weight: Float) = Box(
 }
 
 @Composable
-fun RowScope.ScoreText(text: String, @ColorRes backgroundColor: Int) = Box(
+fun RowScope.ScoreText(text: String, @ColorRes backgroundColor: Int, bonusRP: Int) = Box(
     modifier = Modifier
         .height(40.dp)
         .weight(1.5f)
         .background(color = colorResource(backgroundColor)),
     contentAlignment = Alignment.Center,
 ) {
+    Row(
+        modifier = Modifier.fillMaxSize().padding(start = 1.dp),
+        horizontalArrangement = Arrangement.Start,
+        verticalAlignment = Alignment.Top
+    ) {
+        for (i in 1..bonusRP) {
+            MatchRPDot()
+        }
+    }
     Text(
         text = text,
         textAlign = TextAlign.Center,
