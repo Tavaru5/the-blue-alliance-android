@@ -16,6 +16,7 @@ import com.thebluealliance.androidclient.interfaces.RenderableModel;
 import com.thebluealliance.androidclient.listitems.ListElement;
 import com.thebluealliance.androidclient.renderers.MatchRenderer;
 import com.thebluealliance.androidclient.renderers.ModelRendererSupplier;
+import com.thebluealliance.androidclient.types.AllianceColor;
 import com.thebluealliance.androidclient.types.MatchType;
 import com.thebluealliance.androidclient.types.ModelType;
 import com.thebluealliance.api.model.IMatch;
@@ -47,7 +48,7 @@ public class Match implements IMatch, TbaDatabaseModel, RenderableModel<Match> {
     private @Nullable List<IMatchVideo> videos;
     private @Nullable Long time;
     private @Nullable Long actualTime;
-    private @Nullable String winningAlliance;
+    private AllianceColor winningAlliance;
     private @Nullable Long lastModified;
 
     // Other variables
@@ -138,11 +139,15 @@ public class Match implements IMatch, TbaDatabaseModel, RenderableModel<Match> {
     }
 
     @Override @Nullable public String getWinningAlliance() {
+        return winningAlliance.getApiString();
+    }
+
+    public AllianceColor getWinningAllianceColor() {
         return winningAlliance;
     }
 
     @Override public void setWinningAlliance(@Nullable String winningAlliance) {
-        this.winningAlliance = winningAlliance;
+        this.winningAlliance = AllianceColor.Companion.fromApiString(winningAlliance);
     }
 
     @Override @Nullable public Long getLastModified() {
@@ -193,22 +198,33 @@ public class Match implements IMatch, TbaDatabaseModel, RenderableModel<Match> {
         return selectedTeam;
     }
 
+    public String getSelectedTeamNumber() {
+        if (selectedTeam == null) {
+            return null;
+        } else {
+            return selectedTeam.replace("frc", "");
+        }
+    }
+
     public void setSelectedTeam(String selectedTeam) {
         this.selectedTeam = selectedTeam;
     }
 
     public boolean didSelectedTeamWin() {
-        if (selectedTeam.isEmpty() || alliances == null || winningAlliance == null || winningAlliance.isEmpty()) {
+        if (selectedTeam.isEmpty() || alliances == null || winningAlliance == AllianceColor.NEITHER) {
             return false;
         }
 
-        if ("red".equals(winningAlliance)) {
-            return getRedTeams(alliances).contains(selectedTeam);
-        } else if ("blue".equals(winningAlliance)) {
-            return getBlueTeams(alliances).contains(selectedTeam);
-        } else {
-            return false;
+
+        switch (winningAlliance) {
+            case RED:
+                return getRedTeams(alliances).contains(selectedTeam);
+            case BLUE:
+                return getBlueTeams(alliances).contains(selectedTeam);
+            default:
+                return false;
         }
+
     }
 
     public static Integer getRedScore(IMatchAlliancesContainer alliances) {
@@ -260,20 +276,28 @@ public class Match implements IMatch, TbaDatabaseModel, RenderableModel<Match> {
 
         if (hasBeenPlayed(redScore, blueScore)) {
             if (redTeams.contains(teamKey)) {
-                if ("red".equals(winningAlliance)) {
-                    currentRecord[0]++;
-                } else if ("blue".equals(winningAlliance)) {
-                    currentRecord[1]++;
-                } else {
-                    currentRecord[2]++;
+                switch (winningAlliance) {
+                    case RED:
+                        currentRecord[0]++;
+                        break;
+                    case BLUE:
+                        currentRecord[1]++;
+                        break;
+                    default:
+                        currentRecord[2]++;
+                        break;
                 }
             } else if (blueTeams.contains(teamKey)) {
-                if ("blue".equals(winningAlliance)) {
-                    currentRecord[0]++;
-                } else if ("red".equals(winningAlliance)) {
-                    currentRecord[1]++;
-                } else {
-                    currentRecord[2]++;
+                switch (winningAlliance) {
+                    case BLUE:
+                        currentRecord[0]++;
+                        break;
+                    case RED:
+                        currentRecord[1]++;
+                        break;
+                    default:
+                        currentRecord[2]++;
+                        break;
                 }
             }
         }

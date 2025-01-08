@@ -1,8 +1,9 @@
 package com.thebluealliance.androidclient.composables.eventinfo
 
+import android.text.format.DateFormat
 import androidx.annotation.ColorRes
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
@@ -21,33 +22,43 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.thebluealliance.androidclient.R
+import com.thebluealliance.androidclient.models.Match
+import com.thebluealliance.androidclient.types.AllianceColor
+import java.util.Date
+import java.util.Locale
+
+private const val matchTimeFormatSkeleton = "E hh:mm a"
 
 @Composable
-fun MatchInfoComposable() {
+fun MatchInfoComposable(match: Match) {
+    // make scores null if match hasn't been played
+    val showScores =  match.alliances?.red?.score != null && match.alliances?.blue?.score != null
     Row(
         modifier = Modifier
-        .fillMaxWidth()
-        .height(IntrinsicSize.Min)
+            .fillMaxWidth()
+            .height(IntrinsicSize.Min)
     ) {
         Column(
             modifier = Modifier.weight(1f),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Box(
-                modifier = Modifier.weight(1f).fillMaxWidth(),
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth(),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
                     modifier = Modifier.padding(horizontal = 8.dp),
-                    text = "Quarter 1-1",
+                    text = match.getTitle(LocalContext.current.resources),
                     textAlign = TextAlign.Center
                 )
             }
@@ -58,51 +69,112 @@ fun MatchInfoComposable() {
                 tint = colorResource(R.color.primary_text_color)
             )
         }
-        Column(modifier = Modifier.weight(2f)) {
-            HeaderText(stringResource(R.string.teams))
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(40.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                TeamText("Red 1", R.color.match_view_red_team)
-                TeamText("Red 2", R.color.match_view_red_team)
-                TeamText("Red 3", R.color.match_view_red_team)
+        Column(
+            modifier = Modifier.weight(3f)
+        ) {
+            // Headers
+            Row {
+                HeaderText(stringResource(R.string.teams), 2f)
+                if (showScores) {
+                    HeaderText(stringResource(R.string.score), 1f)
+                } else {
+                    HeaderText(stringResource(R.string.time), 1f)
+                }
             }
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(40.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                TeamText("Blue 1", R.color.match_view_blue_team)
-                TeamText("Blue 2", R.color.match_view_blue_team)
-                TeamText("Blue 3", R.color.match_view_blue_team)
-            }
-        }
-        Column(modifier = Modifier.weight(1f)) {
-            HeaderText(stringResource(R.string.score))
-            ScoreText("Red Score", R.color.match_view_red_score)
-            ScoreText("Blue Score", R.color.match_view_blue_score)
-        }
-        Column(modifier = Modifier.weight(1f)) {
-            HeaderText(stringResource(R.string.time))
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                Text("88:88 PM")
+            Row {
+                // Teams
+                Column(modifier = Modifier.weight(2f)) {
+                    var redModifier = Modifier
+                        .fillMaxWidth()
+                        .height(40.dp)
+                    var blueModifier = Modifier
+                        .fillMaxWidth()
+                        .height(40.dp)
+                    when (match.winningAllianceColor) {
+                        AllianceColor.BLUE -> blueModifier = blueModifier.border(
+                            2.dp, colorResource(R.color.blue)
+                        )
+                        AllianceColor.RED -> redModifier = redModifier.border(
+                            2.dp, colorResource(R.color.red)
+                        )
+                        else -> {}
+                    }
+                    Row(
+                        redModifier,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        match.alliances?.red?.teamKeys?.forEach { teamKey ->
+                            teamKey?.let {
+                                TeamText(
+                                    it,
+                                    R.color.match_view_red_team,
+                                    teamKey == match.selectedTeamNumber
+                                )
+                            }
+                        }
+                        if (showScores) {
+                            ScoreText(
+                                match.alliances!!.red.score.toString(),
+                                R.color.match_view_red_score
+                            )
+                        }
+                    }
+                    Row(
+                        blueModifier,
+                        verticalAlignment = Alignment.CenterVertically
+                    ){
+                        match.alliances?.blue?.teamKeys?.forEach { teamKey ->
+                            teamKey?.let {
+                                TeamText(
+                                    it,
+                                    R.color.match_view_blue_team,
+                                    teamKey == match.selectedTeamNumber
+                                )
+                            }
+                        }
+                        if (showScores) {
+                            ScoreText(
+                                match.alliances!!.blue.score.toString(),
+                                R.color.match_view_blue_score
+                            )
+                        }
+                    }
+                }
+                if (!showScores) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        val localTimeString: String
+                        if (match.time == null) {
+                            localTimeString = stringResource(R.string.no_time_available)
+                        } else {
+                            val date = Date(match.time!! * 1000L)
+                            val format = DateFormat.getBestDateTimePattern(
+                                Locale.getDefault(),
+                                matchTimeFormatSkeleton
+                            )
+                            localTimeString = format.format(date)
+                        }
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = localTimeString,
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
+                }
+
             }
         }
     }
 }
 
 @Composable
-fun HeaderText(text: String) = Box(
+fun RowScope.HeaderText(text: String, weight: Float) = Box(
     modifier = Modifier
         .height(32.dp)
-        .fillMaxWidth()
+        .weight(weight)
         .background(color = colorResource(R.color.column_header_gray)),
     contentAlignment = Alignment.Center,
 ) {
@@ -114,10 +186,10 @@ fun HeaderText(text: String) = Box(
 }
 
 @Composable
-fun ScoreText(text: String, @ColorRes backgroundColor: Int) = Box(
+fun RowScope.ScoreText(text: String, @ColorRes backgroundColor: Int) = Box(
     modifier = Modifier
         .height(40.dp)
-        .fillMaxWidth()
+        .weight(1.5f)
         .background(color = colorResource(backgroundColor)),
     contentAlignment = Alignment.Center,
 ) {
@@ -129,7 +201,11 @@ fun ScoreText(text: String, @ColorRes backgroundColor: Int) = Box(
 }
 
 @Composable
-fun RowScope.TeamText(text: String, @ColorRes backgroundColor: Int) = Box(
+fun RowScope.TeamText(
+    text: String,
+    @ColorRes backgroundColor: Int,
+    isSelectedTeam: Boolean
+) = Box(
     modifier = Modifier
         .weight(1f)
         .fillMaxHeight()
@@ -139,5 +215,6 @@ fun RowScope.TeamText(text: String, @ColorRes backgroundColor: Int) = Box(
     Text(
         text = text,
         textAlign = TextAlign.Center,
+        fontWeight = if (isSelectedTeam) FontWeight.Bold else FontWeight.Normal
     )
 }
