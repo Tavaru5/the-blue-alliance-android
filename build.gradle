@@ -1,6 +1,9 @@
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
 
 buildscript {
+    ext {
+        kotlin_version = '1.9.24'
+    }
     repositories {
         mavenCentral()
         maven {
@@ -25,12 +28,14 @@ buildscript {
         classpath 'com.google.firebase:firebase-crashlytics-gradle:2.9.9'
 
         classpath 'com.google.dagger:hilt-android-gradle-plugin:2.50'
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
     }
 }
 
 plugins {
     id "com.github.ben-manes.versions" version "0.42.0"
     id "org.openapi.generator" version "7.10.0"
+    id "org.jetbrains.kotlin.kapt" version "1.9.24"
 }
 
 allprojects {
@@ -59,6 +64,7 @@ allprojects {
         robolectricVersion = '4.14.1'
         permissionDispatcherVersion = '4.9.2'
         workManagerVersion = '2.9.0'
+        moshiVersion = '1.15.2'
 
         travisBuild = System.getenv("CI") == "true"
         // allows for -Dpre-dex=false to be set
