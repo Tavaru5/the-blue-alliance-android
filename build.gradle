@@ -65,6 +65,7 @@ allprojects {
         permissionDispatcherVersion = '4.9.2'
         workManagerVersion = '2.9.0'
         moshiVersion = '1.15.2'
+        kotestVersion = '5.9.1'
 
         travisBuild = System.getenv("CI") == "true"
         // allows for -Dpre-dex=false to be set

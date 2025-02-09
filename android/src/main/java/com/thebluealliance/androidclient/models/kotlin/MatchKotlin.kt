@@ -1,4 +1,4 @@
-package com.thebluealliance.androidclient.models
+package com.thebluealliance.androidclient.models.kotlin
 
 import com.squareup.moshi.JsonClass
 
